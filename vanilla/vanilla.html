@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vanilla</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+        integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<div id="side-bar">
+  <h1><a href="../index.html">PIPE</a></h1>
+  <hr>
+  <ul class="list-unstyled">
+    <li><a href="./vanilla.html">Vanilla</a></li>
+    <li><a href="../web/web.html">Web</a></li>
+    <li><a href="../desktop/desktop.html">Desktop</a></li>
+  </ul>
+</div>
+<div id="content">
+  <div class="container">
+    <h1>Introduction</h1>
+    <p>
+      This version of the application is titled "Vanilla", meaning it's a dumbed-down version of
+      original application. Many of the features in the default web application will be omitted,
+      including smart personal assistance, custom authentication, miscellaneous application integration,
+      and admin desktop tool support.
+    </p>
+
+    <p>
+      The purpose of this deviation from the main branch of the application was to provide easier
+      integration and maintenance of the application by the staffs of Office of Election, in the
+      case that they choose to utilize some or all of the components in the application.
+    </p>
+
+    <p>
+      With that in mind, the Vanilla version of PIPE was written without the help of any
+      foreign frameworks or libraries to reduce the additional learning curve associated with
+      those tools. In addition, the code was documented extensively unlike that of the original
+      version, to assist with comprehension. This boiled down to the exclusion of Bootstrap,
+      Angular 2, and Express, and the jQuery library that would normally be imported
+      in the absence of these frameworks..
+    </p>
+
+    <p>
+      Note that the Vanilla version of PIPE no longer uses Node.js as the backend, but rather
+      IIS for the server and ASP.NET Core for providing API endpoints (the technology stack currently
+      deployed by the Office of Election).
+    </p>
+    <h1>Getting Started</h1>
+    <ol>
+      <li>
+        Install IIS. Open an elevated Powershell or command line window and run the following command:
+        <pre>
+          <code>Start /w pkgmgr /iu:IIS-WebServerRole;IIS-WebServer;IIS-CommonHttpFeatures;IIS-StaticContent;IIS-DefaultDocument;IIS-DirectoryBrowsing;IIS-HttpErrors;IIS-HealthAndDiagnostics;IIS-HttpLogging;IIS-LoggingLibraries;IIS-RequestMonitor;IIS-Security;IIS-RequestFiltering;IIS-HttpCompressionStatic;IIS-WebServerManagementTools;IIS-ManagementConsole;WAS-WindowsActivationService;WAS-ProcessModel;WAS-NetFxEnvironment;WAS-ConfigurationAPI</code>
+        </pre>
+      </li>
+      <li>
+        Clone repository.
+        <pre>
+          <code>git clone https://github.com/architechs-hacc/pipe.git</code>
+        </pre>
+      </li>
+      <li>
+        Copy static web files to IIS directory.
+        <pre>
+          <code>robocopy C:\..\path\to\pipe\vanilla C:\inetpub\wwwroot /s /e</code>
+        </pre>
+      </li>
+      <li>
+        Open application at:
+        <pre>
+          <code>localhost</code>
+        </pre>
+      </li>
+    </ol>
+    <h1>Features</h1>
+    Replicated dynamically generated calendar with month manipulators. Void of UI and front-end frameworks.
+    <img src="1.png">
+  </div>
+</div>
+</body>
+</html>

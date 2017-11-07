@@ -16,3 +16,53 @@
 #section2 h1, #section2 h2 {
   margin: 30px 0;
 }
+
+#landing {
+  padding: 50px 0;
+  margin-left: 300px;
+  background-color: #00a3fa;
+  color: #ffffff;
+}
+
+#content {
+  padding: 50px;
+  margin-left: 300px;
+}
+
+#side-bar {
+  position: fixed;
+  padding: 50px;
+  width: 300px;
+  height: 100%;
+  overflow-x: hidden;
+  background-color: rgba(80, 81, 96, 255);
+  color: #ffffff;
+}
+
+#side-bar ul * {
+  font-size: 1.5rem;
+}
+
+hr {
+  border-color: #ffffff;
+}
+
+img {
+  width: 100%;
+}
+
+a:link {
+  text-decoration: none!important;
+}
+
+a:visited {
+  text-decoration: none!important;
+}
+
+a:hover {
+  text-decoration: underline!important;
+}
+
+a:active {
+  text-decoration: underline!important;
+}

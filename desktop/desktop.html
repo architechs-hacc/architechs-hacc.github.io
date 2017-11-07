@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Desktop</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+        integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<div id="side-bar">
+  <h1><a href="../index.html">PIPE</a></h1>
+  <hr>
+  <ul class="list-unstyled">
+    <li><a href="../vanilla/vanilla.html">Vanilla</a></li>
+    <li><a href="../web/web.html">Web</a></li>
+    <li><a href="./desktop.html">Desktop</a></li>
+  </ul>
+</div>
+<div id="content">
+  <div class="container">
+    <h1>Introduction</h1>
+    <p>
+      PIPE Desktop is a complimentary admin tool designed for use by the staffs of
+      Office of Elections. It offers the admins the ability to change database
+      records and configure server settings such as reminder emails.
+    </p>
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/yz9nE8gcMHU?showinfo=0" frameborder="0" allowfullscreen></iframe>
+
+    <h1>Getting Started</h1>
+    <ol>
+      <li>
+        Clone repository.
+        <pre>
+          <code>git clone https://github.com/HACC17/ArchiTechs.git</code>
+        </pre>
+      </li>
+      <li>
+        Change directory.
+        <pre>
+          <code>cd ../path/to/pipe/desktop</code>
+        </pre>
+      </li>
+      <li>
+        Install node packages.
+        <pre>
+          <code>npm install</code>
+        </pre>
+      </li>
+      <li>
+        Run development server.
+        <pre>
+          <code>ng serve</code>
+        </pre>
+      </li>
+      <li>
+        Run electron.
+        <pre>
+          <code>electron .</code>
+        </pre>
+      </li>
+
+    </ol>
+    <h1>Application Design</h1>
+    <h3>Database Helpers and File Browsing</h3>
+    Admins can back up database, browse and download files on the server.
+    <pre>
+      <code>
+router.ws('/', function(ws, req) {
+  /* DB BACKUP */
+  const mongodump = exec('mongodump -h db:27017 --verbose', (err, stdout, stderr) => {
+    console.log('mongodump is completed');
+    ws.terminate();
+  });
+
+  mongodump.stdout.on('data', (data) => {
+    console.log(data);
+    ws.send(data);
+  });
+
+  mongodump.stderr.on('data', (data) => {
+    console.log(data);
+    ws.send(data);
+  });
+
+  // setInterval(() => {
+  //   ws.send('this is a test message from the server');
+  // }, 5000);
+});
+
+router.get('/download', (req, res) => {
+  const directory = './dump/election/';
+  res.download(directory + req.query.name);
+});
+
+router.get('/', (req, res) => {
+  const directory = './dump/election';
+  let list = [];
+  fs.readdir(directory, (err, files) => {
+    if(err) {
+      res.send('There is an error:', err);
+    } else {
+      for (let file of files) {
+        list.push({
+          name: file,
+          url: 'http://architechs.us/api/file/download?name=' + file
+        });
+      }
+      res.send(JSON.stringify(list));
+    }
+  })
+});
+      </code>
+    </pre>
+    <h3>Server Settings</h3>
+    Admins can set reminder due dates and message to send with the following functions:
+    <pre>
+      <code>
+function filterDueForReminder(callback) {
+  nconf.file('default', {file: './config.json'});
+  const milisecondsInDay = 1000 * 60 * 60 * 24;
+  MongoClient.connect(environment.url.mongodb)
+    .then((db) => {
+      return db.collection('volunteer');
+    })
+    .then((collection) => {
+      return collection.find({$where: `((new Date(this.training.date) - new Date()) / ${milisecondsInDay}) >= ${nconf.get('email:days')}`}).toArray();
+    })
+    .then((result) => {
+      callback(result);
+    })
+}
+
+function sendReminderEmail(volunteer, transporter) {
+  nconf.file('default', {file: './config.json'});
+  const message = nconf.get('email:message');
+  console.log('message: ', message);
+
+  const mailOptions = {
+    from: '*your email*',
+    to: volunteer.email,
+    subject: 'Reminder of your upcoming training session',
+    html: message
+  };
+
+  console.log('sendReminderemail');
+  transporter.sendMail(mailOptions, function (err, info) {
+    if(err)
+      console.log(err)
+    else
+      console.log(info);
+  });
+}
+      </code>
+    </pre>
+  </div>
+</div>
+</body>
+</html>

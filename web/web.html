@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Web</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+        integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<div id="side-bar">
+  <h1><a href="../index.html">PIPE</a></h1>
+  <hr>
+  <ul class="list-unstyled">
+    <li><a href="../vanilla/vanilla.html">Vanilla</a></li>
+    <li><a href="./web.html">Web</a></li>
+    <li><a href="../desktop/desktop.html">Desktop</a></li>
+  </ul>
+</div>
+<div id="content">
+  <div class="container">
+    <h1>Introduction</h1>
+    <p>
+      PIPE is a smart volunteer scheduling tool that lets the staff do less work and
+      the volunteers feel more connected.
+    </p>
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/pqV_I5JW1_g?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
+
+    <h1>Getting Started</h1>
+    <ol>
+      <li>
+        Clone repository.
+        <pre>
+          <code>git clone https://github.com/HACC17/ArchiTechs.git</code>
+        </pre>
+      </li>
+      <li>
+        Change directory.
+        <pre>
+          <code>cd ../path/to/pipe/web</code>
+        </pre>
+      </li>
+      <li>
+        Install node packages.
+        <pre>
+          <code>npm install</code>
+        </pre>
+      </li>
+      <li>
+        Run docker-compose.
+        <pre>
+          <code>docker-compose up</code>
+        </pre>
+      </li>
+
+      <li>
+        <b>OR</b> In lieu of step 4, run MongoDB server in a command line.
+        <pre>
+          <code>mongod</code>
+        </pre>
+      </li>
+      <li>
+        Run node server with bundled assets.
+        <pre>
+          <code>nodemon server.js</code>
+        </pre>
+      </li>
+    </ol>
+    <h1>Application Design</h1>
+    <h3>Directory Structure</h3>
+    <p>
+      The application's entry point is <b>main</b>. Everything gets rendered on that page
+      dynamically using nested routes. The main page always contains the status bar, which
+      acts as the controls for user profile information, logout, and initiating the personal
+      assistance page. The content below the status bar can render two pages: 1) Scheduler
+      2) Dialog. The scheduler page holds the calendar and side-bar components and is in charge
+      of the volunteer scheduling logic. The dialog page is responsible for analyzing existing
+      user schedule, making suggestions of training dates, and answering miscellaneous questions.
+    </p>
+    <pre>
+      <code>
+    app/                  # App is separated into component directories
+      auth/               # Authenticates if user has an account
+      calendar/           # Draws calendar
+      dialog/             # Send, receive messages, renders personal assistance
+      guards/             # Manage route permissions
+      login/              # Authenticates existing user with password
+      main/               # The page that draws everything
+      message/            # Renders messages by sender, profile picture, content
+      register/           # Registers new users
+      scheduler/          # Handles logic for scheduling volunteers, training, work place
+      side-bar/           # Control for calendar manipulation, filter, submission of info
+      status-bar/         # Control for profile, bridge to assistance
+      work-selection/     # Selection menu for work place
+      animation.service   # Handles unorthodox animations
+      user.service        # Fetches current user session info
+      </code>
+    </pre>
+    <p>
+      The application receives all of its data from custom API endpoints defined on a Node.js
+      based back-end that uses MongoDB as the database. These endpoints are shared across
+      both web and desktop versions of the application.
+    </p>
+    <pre>
+      <code>
+    server/           # API endpoints
+      auth.js         # Authentication, login, registration
+      classifier.js   # NLP, assistance response management
+      position.js     # Volunteering positions
+      training.js     # Trainer for NLP
+      volunteer.js    # Volunteers
+      work.js         # Work
+      websocket.js    # Initialize websocket server, set actions
+      </code>
+    </pre>
+
+    <h3>Authentication</h3>
+    <p>
+      All authentication and authorization behaviors are defined in the auth.js file.
+      Persistence connections are ensured by JWT (Javascript Web Tokens). Two versions of
+      API endpoints are written: MySQL (not being used) and MongoDB. The MySQL version was
+      written in case it was needed for integration with existing database on the Office
+      of Elections.
+    </p>
+
+    <b>MySQL</b>
+    <pre>
+      <code>
+// Authenticates a user then signs and sends a JWT token.
+router.post('/login-mysql', (req, res) => {
+  const credential = req.body;
+
+  connect((err) => {
+    if (err) throw err;
+    console.log('Connected message from auth/login.');
+    const sql = "SELECT * FROM `volunteer`" +
+      "WHERE `email` = ? AND `password` = ?";
+
+    con.query(sql, [credential.email, credential.password], (err, result) => {
+      if (err) throw err;
+
+      if (result[0]) {
+        const token = jwt.sign({email: result[0].email}, 'secret');
+        res.send({token: token});
+      }
+
+      else res.send({});
+    });
+  });
+});
+      </code>
+    </pre>
+    <b>MongoDB</b>
+    <pre>
+      <code>
+// Authenticates a user then signs and sends a JWT token.
+router.post('/login', (req, res) => {
+  const credential = req.body;
+
+  MongoClient.connect(environment.url.mongodb, (err, db) => {
+    if (err) throw err;
+    db.collection('volunteer').findOne({email: credential.email, password: credential.password}, (err, item) => {
+      if (err) throw err;
+
+      // Authentication successful (there is a user that matches the credentials).
+      if (item) {
+        // Sign and include a jwt token in the response data.
+        const token = jwt.sign({id: item._id}, 'secret');
+        res.send({token: token});
+      } else {
+        res.send({});
+      }
+
+      db.close();
+    });
+  });
+});
+      </code>
+    </pre>
+
+    <h3>Built Smart</h3>
+    <p>
+      One of the biggest strengths of PIPE is that it eliminates the need for a staff to
+      sit on the other side of the computer screen in order to give support to the user.
+      PIPE uses NLP (Natural Language Processing) to make autonomous decisions about user
+      inquiries. Here's an example of how it processes keywords that it recognized from
+      user commands:
+    </p>
+    <pre>
+      <code>
+    updateResponse(text: string): void {
+    // Check if bot is already listening for a message.
+    if (!this.isCurrentlyWorking) {
+
+      // The bot is free. Now you can start a new conversation.
+      this.classify(text).then((res) => {
+        let response = '';
+
+        // Res = classified keyword.
+        switch (res) {
+          case 'suggest':
+            if (!localStorage.getItem('profileImageUrl')) {
+              response = 'Please sync with your google account first so I can see your schedule.';
+            } else {
+              if (!this.userService.getTraining()) {
+                response = 'Please schedule a training first.';
+              } else {
+                const suggestedTraining = this.schedulerService.findBestDate();
+                response = 'You seem to be free on ' + suggestedTraining.date + '. ' +
+                  'There is a training on that day  for the position: ' + suggestedTraining.positionName + '.';
+              }
+            }
+            break;
+          case 'map':
+            response = 'Would you like me to show you a map?';
+
+            // We started a conversation here. Keep listening for a reply.
+            this.isCurrentlyWorking = true;
+            const subscription = this.observable.subscribe((value) => {
+              // We still need to understand what the reply is... _Res = classified keyword.
+              this.classify(value).then((_res) => {
+                if (_res === 'yes') {
+
+                  if (this.userService.getTraining()) {
+                    this.addMessage(false, 'Sure, I\'ll go ahead and do that for you!');
+                    setTimeout(() => {
+                      this.addMessage(false, 'Here it is: ', this.userService.user.training.address + ' Honolulu, HI');
+                    }, 500);
+                  } else {
+                    this.addMessage(false, 'Hold on, please schedule a training first.');
+                  }
+
+                } else if (_res === 'no') {
+                  this.addMessage(false, 'Oh, okay.');
+                } else {
+                  this.addMessage(false, 'Sorry, I didn\'t understand that.');
+                }
+
+                // Conversation is over.
+                setTimeout(() => {
+                  this.isCurrentlyWorking = false;
+                }, 500);
+                subscription.unsubscribe();
+
+              });
+            });
+            break;
+          case 'greeting':
+            response = 'Hi, my name is Bert and I\'m here to help you out!';
+            break;
+          case 'command':
+            response = 'You can ask me where to go for your training, or to suggest you a training date that fits your schedule.';
+            break;
+          default:
+            response = 'Sorry, I did not understand that';
+            break;
+        }
+
+        this.addMessage(false, response);
+      })
+    }
+  }
+      </code>
+    </pre>
+
+    <h3>Service Oriented</h3>
+    <p>
+      PIPE was built heavily using services, which can be thought of as persistent workers
+      that bridge components together for seamless data transmission. PIPE puts methods
+      that need to be shared across relative components and pages into each appropriate
+      services.
+    </p>
+  </div>
+</div>
+</body>
+</html>
